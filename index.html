@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umbrales de Samarkanda - Nº 1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a4d5e 0%, #2c3e50 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            color: #e8dcc4;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        /* Contenedor del flipbook */
+        .flipbook-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            perspective: 2000px;
+        }
+
+        #flipbook {
+            width: 922px;
+            height: 600px;
+            margin: 0 auto;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+        }
+
+        #flipbook .page {
+            width: 461px;
+            height: 600px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        /* Estilos de páginas */
+        .page-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page h2 {
+            font-size: 2.5rem;
+            color: #1a4d5e;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .page h3 {
+            font-size: 1.8rem;
+            color: #2c2c2c;
+            margin-bottom: 15px;
+        }
+
+        .page p {
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #2c2c2c;
+            text-align: justify;
+            margin-bottom: 15px;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* Portada especial */
+        .cover {
+            background: linear-gradient(135deg, rgba(26, 77, 94, 0.95), rgba(26, 77, 94, 0.85)),
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 461 600"><rect fill="%231a4d5e" width="461" height="600"/><circle cx="230" cy="300" r="150" fill="%23e8dcc4" opacity="0.1"/></svg>');
+            background-size: cover;
+            color: white !important;
+        }
+
+        .cover h1 {
+            font-size: 3rem;
+            color: #D4AF37 !important;
+            text-shadow: 3px 3px 10px rgba(0,0,0,0.8);
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+        }
+
+        .cover .tagline {
+            font-size: 2rem;
+            color: #FFD700 !important;
+            margin: 20px 0;
+            font-weight: 700;
+        }
+
+        .cover .subtitle {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #e8dcc4 !important;
+            opacity: 0.9;
+        }
+
+        /* Placeholder content */
+        .placeholder {
+            color: #999;
+            font-style: italic;
+            background: #f9f9f9;
+            padding: 20px;
+            border-left: 4px solid #999;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Controles */
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .controls button {
+            background: #1a4d5e;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .controls button:hover {
+            background: #FFD700;
+            color: #1a4d5e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .page-info {
+            color: #e8dcc4;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Instrucciones */
+        .instructions {
+            text-align: center;
+            color: #e8dcc4;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            #flipbook {
+                width: 738px;
+                height: 480px;
+            }
+            #flipbook .page {
+                width: 369px;
+                height: 480px;
+                padding: 30px;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+            .cover h1 {
+                font-size: 2.2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #flipbook {
+                width: 460px;
+                height: 600px;
+            }
+            #flipbook .page {
+                width: 460px;
+                height: 600px;
+                padding: 25px;
+            }
+            .page h2 {
+                font-size: 2rem;
+            }
+            .controls button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 500px) {
+            #flipbook {
+                width: 320px;
+                height: 480px;
+            }
+            #flipbook .page {
+                width: 320px;
+                height: 480px;
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .cover h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Loader */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 77, 94, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loader-text {
+            color: #FFD700;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 215, 0, 0.3);
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text">Cargando revista...</div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>UMBRALES DE SAMARKANDA</h1>
+        <p>Zona de Riesgo • Nº 1</p>
+    </div>
+
+    <!-- Flipbook Container -->
+    <div class="flipbook-container">
+        <div id="flipbook">
+            <!-- PÁGINA 1: PORTADA -->
+            <div class="page cover">
+                <div class="page-content">
+                    <h1>UMBRALES DE<br>SAMARKANDA</h1>
+                    <div class="tagline">ZONA DE RIESGO</div>
+                    <div class="subtitle">explora los límites de la creación literaria</div>
+                    <p style="margin-top: 40px; font-size: 0.9rem;">Nº 1 • 2025<br>Director: Lucas Sobrecasas</p>
+                </div>
+            </div>
+
+            <!-- PÁGINA 2: ÍNDICE -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Índice</h2>
+                    <div style="text-align: left; width: 100%; margin-top: 30px; line-height: 2.2;">
+                        <p><strong>03</strong> Editorial</p>
+                        <p><strong>04-06</strong> Poesía</p>
+                        <p><strong>07-08</strong> Ficción</p>
+                        <p><strong>09-10</strong> No Ficción</p>
+                        <p><strong>11-12</strong> Reseñas y Crítica</p>
+                        <p><strong>13-14</strong> Arte Gráfico</p>
+                        <p><strong>15-16</strong> Entrevistas</p>
+                        <p><strong>17</strong> Perfiles / Biografía</p>
+                        <p><strong>18</strong> Créditos</p>
+                    </div>
+                </div>
+                <div class="page-number">2</div>
+            </div>
+
+            <!-- PÁGINA 3: EDITORIAL -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Editorial</h2>
+                    <h3>Zona de Riesgo</h3>
+                    <div class="placeholder">
+                        Escribe aquí el texto editorial del primer número. Introduce el concepto de "Zona de Riesgo" y la visión de la revista Umbrales de Samarkanda. Explica qué significa explorar los límites de la creación literaria.
+                    </div>
+                </div>
+                <div class="page-number">3</div>
+            </div>
+
+            <!-- PÁGINA 4: POESÍA 1 -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Poesía</h2>
+                    <h3 style="font-style: italic; color: #1a4d5e; margin: 30px 0;">[Título del poema 1]</h3>
+                    <div class="placeholder" style="text-align: center;">
+                        [Escribe aquí el primer poema]<br>
+                        [Verso a verso,]<br>
+                        [con el formato deseado.]<br><br>
+                        [Respetando los espacios,]<br>
+                        [las pausas,]<br>
+                        [los silencios.]
+                    </div>
+                    <p style="margin-top: 20px; text-align: right; color: #1a4d5e; font-weight: 700;">
+                        — [Nombre del autor]
+                    </p>
+                </div>
+                <div class="page-number">4</div>
+            </div>
+
+            <!-- PÁGINA 5: POESÍA 2 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 style="font-style: italic; color: #1a4d5e;">[Título del poema 2]</h3>
+                    <div class="placeholder" style="text-align: center; margin-top: 30px;">
+                        [Escribe aquí el segundo poema]<br>
+                        [Con su estructura propia,]<br>
+                        [sus pausas y ritmos.]
+                    </div>
+                    <p style="margin-top: 20px; text-align: right; color: #1a4d5e; font-weight: 700;">
+                        — [Nombre del autor]
+                    </p>
+                </div>
+                <div class="page-number">5</div>
+            </div>
+
+            <!-- PÁGINA 6: POESÍA 3 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 style="font-style: italic; color: #1a4d5e;">[Título del poema 3]</h3>
+                    <div class="placeholder" style="text-align: center; margin-top: 30px;">
+                        [Escribe aquí el tercer poema]<br>
+                        [Cada palabra cuenta,]<br>
+                        [cada silencio también.]
+                    </div>
+                    <p style="margin-top: 20px; text-align: right; color: #1a4d5e; font-weight: 700;">
+                        — [Nombre del autor]
+                    </p>
+                </div>
+                <div class="page-number">6</div>
+            </div>
+
+            <!-- PÁGINA 7: FICCIÓN -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Ficción</h2>
+                    <h3>[Título del relato 1]</h3>
+                    <p style="color: #1a4d5e; font-weight: 700;">por [Nombre del autor]</p>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Escribe aquí el primer relato breve. Desarrolla la narrativa, los personajes, la atmósfera...
+                    </div>
+                </div>
+                <div class="page-number">7</div>
+            </div>
+
+            <!-- PÁGINA 8: FICCIÓN 2 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3>[Título del relato 2]</h3>
+                    <p style="color: #1a4d5e; font-weight: 700;">por [Nombre del autor]</p>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Escribe aquí el segundo relato breve. Otra historia, otra voz...
+                    </div>
+                </div>
+                <div class="page-number">8</div>
+            </div>
+
+            <!-- PÁGINA 9: NO FICCIÓN -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>No Ficción</h2>
+                    <h3>[Título del ensayo]</h3>
+                    <p style="color: #1a4d5e; font-weight: 700;">por [Nombre del autor]</p>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Escribe aquí el ensayo, diario o texto híbrido...
+                    </div>
+                </div>
+                <div class="page-number">9</div>
+            </div>
+
+            <!-- PÁGINA 10: CONTINUACIÓN -->
+            <div class="page">
+                <div class="page-content">
+                    <div class="placeholder">
+                        [Continuación del ensayo o texto de no ficción...]
+                    </div>
+                </div>
+                <div class="page-number">10</div>
+            </div>
+
+            <!-- PÁGINA 11: RESEÑAS -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Reseñas y Crítica</h2>
+                    <h3>[Título de la obra reseñada]</h3>
+                    <p style="font-style: italic; color: #999; font-size: 0.85rem;">[Autor - Editorial - Año]</p>
+                    <p style="color: #1a4d5e; font-weight: 700; margin-top: 10px;">Reseña por [Nombre]</p>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Escribe aquí la reseña o ensayo crítico...
+                    </div>
+                </div>
+                <div class="page-number">11</div>
+            </div>
+
+            <!-- PÁGINA 12: RESEÑA 2 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3>[Título de obra reseñada 2]</h3>
+                    <p style="font-style: italic; color: #999; font-size: 0.85rem;">[Autor - Editorial - Año]</p>
+                    <p style="color: #1a4d5e; font-weight: 700; margin-top: 10px;">Reseña por [Nombre]</p>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Segunda reseña o ensayo crítico...
+                    </div>
+                </div>
+                <div class="page-number">12</div>
+            </div>
+
+            <!-- PÁGINA 13: ARTE GRÁFICO -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Arte Gráfico</h2>
+                    <div style="border: 3px dashed #999; width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; margin: 30px 0;">
+                        <p style="color: #999; font-style: italic;">[INSERTA IMAGEN AQUÍ]</p>
+                    </div>
+                    <p style="color: #1a4d5e; font-weight: 700;">— [Nombre del artista]</p>
+                    <p style="font-style: italic; color: #999; font-size: 0.85rem;">[Título - Técnica - Año]</p>
+                </div>
+                <div class="page-number">13</div>
+            </div>
+
+            <!-- PÁGINA 14: ARTE 2 -->
+            <div class="page">
+                <div class="page-content">
+                    <div style="border: 3px dashed #999; width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; background: #f5f5f5;">
+                        <p style="color: #999; font-style: italic;">[INSERTA IMAGEN 2]</p>
+                    </div>
+                    <p style="color: #1a4d5e; font-weight: 700; margin-top: 20px;">— [Nombre del artista]</p>
+                    <p style="font-style: italic; color: #999; font-size: 0.85rem;">[Título - Técnica - Año]</p>
+                </div>
+                <div class="page-number">14</div>
+            </div>
+
+            <!-- PÁGINA 15: ENTREVISTAS -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Entrevistas</h2>
+                    <h3>con [Nombre del entrevistado]</h3>
+                    <div class="placeholder" style="text-align: left; margin-top: 20px;">
+                        <p style="color: #1a4d5e; font-weight: 700;">— [Pregunta 1...]</p>
+                        <p style="margin-left: 20px; margin-top: 5px;">[Respuesta...]</p>
+                        <p style="color: #1a4d5e; font-weight: 700; margin-top: 15px;">— [Pregunta 2...]</p>
+                        <p style="margin-left: 20px; margin-top: 5px;">[Respuesta...]</p>
+                    </div>
+                </div>
+                <div class="page-number">15</div>
+            </div>
+
+            <!-- PÁGINA 16: ENTREVISTA CONTINÚA -->
+            <div class="page">
+                <div class="page-content">
+                    <div class="placeholder" style="text-align: left;">
+                        <p style="color: #1a4d5e; font-weight: 700;">— [Pregunta 3...]</p>
+                        <p style="margin-left: 20px; margin-top: 5px;">[Respuesta...]</p>
+                        <p style="color: #1a4d5e; font-weight: 700; margin-top: 15px;">— [Pregunta final...]</p>
+                        <p style="margin-left: 20px; margin-top: 5px;">[Respuesta final...]</p>
+                    </div>
+                </div>
+                <div class="page-number">16</div>
+            </div>
+
+            <!-- PÁGINA 17: PERFILES -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Perfiles / Biografía</h2>
+                    <h3>[Nombre del perfilado]</h3>
+                    <div class="placeholder" style="margin-top: 20px;">
+                        Escribe aquí el perfil biográfico o texto biográfico experimental...
+                    </div>
+                </div>
+                <div class="page-number">17</div>
+            </div>
+
+            <!-- PÁGINA 18: CRÉDITOS -->
+            <div class="page">
+                <div class="page-content">
+                    <h2>Créditos</h2>
+                    <div style="text-align: left; margin-top: 30px; line-height: 1.8;">
+                        <p><strong style="color: #1a4d5e;">Dirección / Edición:</strong><br>Lucas Sobrecasas</p>
+                        <p style="margin-top: 15px;"><strong style="color: #1a4d5e;">Consejo Editorial:</strong><br>
+                        Maximinio López, Gabriel Juárez,<br>Khristian Von Marquus, Pablo Katzin,<br>Pablo Iglesias, Galo</p>
+                        <p style="margin-top: 15px;"><strong style="color: #1a4d5e;">Contacto:</strong><br>
+                        [correo@umbralesdesamarkanda.com]<br>
+                        @umbrales_smk</p>
+                        <p style="text-align: center; margin-top: 30px; font-size: 0.85rem; color: #999;">
+                            <em>Umbrales de Samarkanda</em><br>
+                            Revista Literaria Digital • Nº 1 - 2025
+                        </p>
+                    </div>
+                </div>
+                <div class="page-number">18</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="prev-btn">← Anterior</button>
+        <span class="page-info">
+            Página <span id="current-page">1</span> de <span id="total-pages">18</span>
+        </span>
+        <button id="next-btn">Siguiente →</button>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        💡 Haz clic en las páginas o usa los botones para navegar<br>
+        También puedes usar las flechas del teclado ← →
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Inicializar Turn.js
+            $("#flipbook").turn({
+                width: 922,
+                height: 600,
+                autoCenter: true,
+                duration: 1000,
+                gradients: true,
+                elevation: 50,
+                pages: 18,
+                when: {
+                    turned: function(event, page, view) {
+                        $('#current-page').text(page);
+                        
+                        // Actualizar estado de botones
+                        if (page == 1) {
+                            $('#prev-btn').prop('disabled', true);
+                        } else {
+                            $('#prev-btn').prop('disabled', false);
+                        }
+                        
+                        if (page == 18) {
+                            $('#next-btn').prop('disabled', true);
+                        } else {
+                            $('#next-btn').prop('disabled', false);
+                        }
+                    }
+                }
+            });
+
+            // Ocultar loader
+            setTimeout(function() {
+                $('#loader').fadeOut();
+            }, 500);
+
+            // Controles
+            $('#prev-btn').click(function() {
+                $("#flipbook").turn("previous");
+            });
+
+            $('#next-btn').click(function() {
+                $("#flipbook").turn("next");
+            });
+
+            // Teclado
+            $(document).keydown(function(e) {
+                if (e.keyCode == 37) {
+                    $("#flipbook").turn("previous");
+                } else if (e.keyCode == 39) {
+                    $("#flipbook").turn("next");
+                }
+            });
+
+            // Estado inicial
+            $('#prev-btn').prop('disabled', true);
+            $('#total-pages').text(18);
+
+            // Responsive
+            $(window).resize(function() {
+                var width = $(window).width();
+                var flipbookWidth, flipbookHeight, pageWidth;
+                
+                if (width <= 500) {
+                    flipbookWidth = 320;
+                    flipbookHeight = 480;
+                    pageWidth = 320;
+                } else if (width <= 768) {
+                    flipbookWidth = 460;
+                    flipbookHeight = 600;
+                    pageWidth = 460;
+                } else if (width <= 1024) {
+                    flipbookWidth = 738;
+                    flipbookHeight = 480;
+                    pageWidth = 369;
+                } else {
+                    flipbookWidth = 922;
+                    flipbookHeight = 600;
+                    pageWidth = 461;
+                }
+                
+                $("#flipbook").turn("size", flipbookWidth, flipbookHeight);
+            });
+        });
+    </script>
+</body>
+</html>
